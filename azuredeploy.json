@@ -1,0 +1,157 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+	 "parameters": {
+    "dataFactoryName": {
+      "type": "string"
+    },
+    "Location": {
+      "type": "string"
+    },
+    "blobContainer": {
+      "type": "string"
+    },
+    "inputBlobFolder": {
+      "type": "string"
+    },
+    "inputBlobName": {
+      "type": "string"
+    },
+   
+    "sqlTableName": {
+      "type": "string"
+    },
+    "webAppBranch": {
+        "type": "string"
+      },
+      "repoURL": {
+        "type": "string"
+      },
+		 "VMadminUsername": {
+      "type": "string"
+    },
+    "VMadminPassword": {
+        "type": "securestring"
+      },
+      "dnsLabelPrefix": {
+        "type": "string"
+      }
+		 
+  },
+  "variables":{
+       
+  },
+    "resources": 
+    [
+	    {
+            "apiVersion": "2015-01-01",
+            "type": "Microsoft.Resources/deployments",
+            "name": "linkedTemplate-webapp",
+            "dependsOn": ["linkedTemplate-sqlServers"],
+            "properties": {
+                "mode": "incremental",
+                "templateLink": 
+                {
+                    "uri": "[uri(deployment().properties.templateLink.uri, 'azuredeploy-webapp.json')]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "location": {
+                        "value":"[parameters('Location')]"
+                    },
+                    "webAppBranch": {
+                        "value":"[parameters('webAppBranch')]"
+                    },
+                    "repoURL": {
+                        "value":"[parameters('repoURL')]"
+                    }
+                    
+                }
+            }
+        },
+        {
+            "apiVersion": "2015-01-01",
+            "type": "Microsoft.Resources/deployments",
+            "name": "linkedTemplate-applicationGateway",
+            "dependsOn": ["linkedTemplate-webapp"],
+            "properties": {
+                "mode": "incremental",
+                "templateLink": 
+                {
+                    "uri": "[uri(deployment().properties.templateLink.uri, 'azuredeploy-applicationGateway.json')]",
+                    "contentVersion": "1.0.0.0"
+                },
+		"parameters":{
+			"azureWebapp1":{
+				"value":"[reference('linkedTemplate-webapp').outputs.webAppName.value]"
+			},
+			"location":{
+				"value":"[parameters('Location')]"
+			}
+		}   
+            }
+        },
+         {
+            "apiVersion": "2015-01-01",
+            "type": "Microsoft.Resources/deployments",
+            "name": "linkedTemplate-virtualMachine",
+            "properties": {
+                "mode": "incremental",
+                "templateLink": 
+                {
+                "uri": "[uri(deployment().properties.templateLink.uri, 'azuredeploy-virtualmachin.json')]",
+                "contentVersion": "1.0.0.0"
+                },
+		 "parameters":{
+			  "VMadminUsername": {
+      "value": "[parameters('VMadminUsername')]"
+    },
+    "VMadminPassword": {
+          "value": "[parameters('VMadminPassword')]"
+      },
+      "dnsLabelPrefix": {
+          "value": "[parameters('dnsLabelPrefix')]"
+      }
+		 }
+            }
+        },
+	    
+        {
+            "apiVersion": "2015-01-01",
+            "type": "Microsoft.Resources/deployments",
+            "name": "linkedTemplate-sqlServers",
+            "properties": {
+                "mode": "incremental",
+                "templateLink": 
+                {
+                "uri": "[uri(deployment().properties.templateLink.uri, 'azuredeploy-sqlservers.json')]",
+                "contentVersion": "1.0.0.0"
+                }
+            }
+        },
+        {
+            "apiVersion": "2015-01-01",
+            "type": "Microsoft.Resources/deployments",
+            "name": "linkedTemplate-blobStorages",
+            "properties": {
+                "mode": "incremental",
+                "templateLink": 
+                {
+                    "uri": "[uri(deployment().properties.templateLink.uri, 'azuredeploy-blobStorage.json')]",
+                    "contentVersion": "1.0.0.0"
+                }
+            }
+        }
+	    
+	    
+	    
+	    
+	    
+	    
+	    
+	    
+	  
+	   
+        
+    ]
+}

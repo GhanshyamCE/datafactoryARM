@@ -1,0 +1,96 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "databaseAdminUsername": {
+      "type": "string",
+      "defaultValue": "ghanu",
+      "metadata": {
+        "description": "Username for DB Admin"
+      }
+    },
+    "databaseAdminPassword": {
+      "type": "securestring",
+      "defaultValue": "abcd#886",
+      "metadata": {
+        "description": "Password for DB Admin"
+      }
+    },
+    "location": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]",
+      "metadata": {
+        "description": "Location for all resources."
+      }
+    }
+  },
+  "variables": {
+     "serviceServerName": "[concat('serviceserver', uniqueString(resourceGroup().id))]",
+     "portalServerName": "[concat('portalserver', uniqueString(resourceGroup().id))]",
+     //"serverName": "[concat('server', uniqueString(resourceGroup().id))]",
+    // "serverNameVar": "[concat(parameters('serverNames'), uniqueString(resourceGroup().id))]",
+    "databaseName": "DB",
+    "databaseCollation": "SQL_Latin1_General_CP1_CI_AS",
+    "databaseEdition": "Basic",
+    "databaseRequestedServiceObjectiveName": "Basic"
+  },
+  "resources": [
+  {
+      "name": "[toLower(if(equals(copyIndex(),0),variables('serviceServerName'),variables('portalServerName')))]",
+      "type": "Microsoft.Sql/servers",
+      "location": "[parameters('location')]",
+      "apiVersion": "2014-04-01-preview",
+      "dependsOn": [],
+      "tags": {
+        "displayName": "server"
+      },
+      "properties": {
+        "administratorLogin": "[parameters('databaseAdminUsername')]",
+        "administratorLoginPassword": "[parameters('databaseAdminPassword')]"
+      },
+      "resources": [
+        {
+          "name": "AllowAllWindowsAzureIps",
+          "type": "firewallrules",
+          "location": "East US",
+          "apiVersion": "2014-04-01-preview",
+          "dependsOn": [
+            "[resourceId('Microsoft.Sql/servers', toLower(if(equals(copyIndex(),0),variables('serviceServerName'),variables('portalServerName'))))]"
+          ],
+          "properties": {
+            "startIpAddress": "0.0.0.0",
+            "endIpAddress": "0.0.0.0"
+          }
+        },
+        {
+          "name": "[variables('databaseName')]",
+          "type": "databases",
+          "location": "[parameters('location')]",
+          "apiVersion": "2014-04-01-preview",
+          "dependsOn": [
+            "[resourceId('Microsoft.Sql/servers', toLower(if(equals(copyIndex(),0),variables('serviceServerName'),variables('portalServerName'))))]"
+          ],
+          "tags": {
+            "displayName": "database"
+          },
+          "properties": {
+            "collation": "[variables('databaseCollation')]",
+            "edition": "[variables('databaseEdition')]",
+            "maxSizeBytes": "1073741824",
+            "requestedServiceObjectiveName": "[variables('databaseRequestedServiceObjectiveName')]"
+          }
+        }
+      ],
+     "copy": {
+        "name": "server",
+        "count": 2
+      }
+    }
+  ],
+  "outputs": {
+    "AzureSqlDatabase_connectionString": {
+      "type": "securestring",
+      "value":"[concat('Server=tcp:', variables('serviceServerName'),'.database.windows.net,1433;Initial Catalog=',variables('databaseName'), ';Persist Security Info=False;User ID=', parameters('databaseAdminUsername'), ';Password=', parameters('databaseAdminPassword'), ';Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;')]"
+    }
+  }
+}
