@@ -45,7 +45,7 @@
     "AzureStorage_connectionString": {
       "type": "securestring",
            
-          "value": "[concat('DefaultEndpointsProtocol=https;AccountName=',variables('storageAccountName')[0],';AccountKey=',listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName')[0]), '2016-01-01').keys[0].value)]"
+          "value": "[Concat('DefaultEndpointsProtocol=https;AccountName=',variables('storageAccountName')[0],';AccountKey=',listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName')[0]), providers('Microsoft.Storage', 'storageAccounts').apiVersions[0]).keys[0].value)]"
     }
   }
 }
