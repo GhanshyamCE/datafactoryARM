@@ -15,7 +15,7 @@
       }
     },
     "AzureStorage_connectionString": {
-      "type": "securestring",
+      "type": "string",
       "metadata": {
         "description": "Connection string for the Azure Storage account."
       }
